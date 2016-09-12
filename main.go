@@ -8,6 +8,7 @@ import (
 	"github.com/kaiekkrin/komblobulate"
 	"io"
 	"os"
+	"time"
 )
 
 type Params struct {
@@ -32,6 +33,16 @@ func (p *Params) GetAeadChunkSize() int {
 
 func (p *Params) GetAeadPassword() string {
 	return *p.Password
+}
+
+func formatByteCount(count float64) string {
+	if count > (1024 * 1024) {
+		return fmt.Sprintf("%.2fMB", count/(1024*1024))
+	} else if count > 1024 {
+		return fmt.Sprintf("%.2fkB", count/1024)
+	} else {
+		return fmt.Sprintf("%d bytes", count)
+	}
 }
 
 func doEncode(inFile, outFile string, resist, cipher byte, params *Params) (err error) {
@@ -61,7 +72,12 @@ func doEncode(inFile, outFile string, resist, cipher byte, params *Params) (err 
 		writer.Close()
 	}()
 
-	_, err = io.Copy(writer, inf)
+	startTime := time.Now()
+	var written int64
+	written, err = io.Copy(writer, inf)
+
+	fmt.Printf("Encoded %s (%s/second)\n", formatByteCount(float64(written)), formatByteCount(float64(written)/time.Since(startTime).Seconds()))
+
 	return
 }
 
@@ -89,7 +105,12 @@ func doDecode(inFile, outFile string, params *Params) (err error) {
 		return
 	}
 
-	_, err = io.Copy(outf, reader)
+	startTime := time.Now()
+	var written int64
+	written, err = io.Copy(outf, reader)
+
+	fmt.Printf("Decoded %s (%s/second)\n", formatByteCount(float64(written)), formatByteCount(float64(written)/time.Since(startTime).Seconds()))
+
 	return
 }
 
